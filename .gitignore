@@ -1,0 +1,4 @@
+node_modules/
+trainingLibrary/
+.DS_Store
+*.swp
