@@ -15,7 +15,7 @@ body {
   float: left;
   width: 15px;
   height: 15px;
-  border: solid 1px black;
+  border: solid 1px gray;
   border-radius: 8px;
 }
 
@@ -25,5 +25,5 @@ body {
 }
 
 .alive {
-  background-color: blue;
+  background-color: black;
 }
