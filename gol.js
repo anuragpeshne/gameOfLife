@@ -4,53 +4,62 @@ var clearChildren = function (element) {
   }
 };
 
-var getNxMElement = function(universeContainer, x, y) {
+var getCell = function(universeContainer, x, y) {
   return universeContainer.childNodes[y].childNodes[x];
 };
 
-var resurrect = function(universe, cell) {
-	var cellPosition = cell.id.split('-');
-	universe[parseInt(cellPosition[0])][parseInt(cellPosition[1])] = 1;
-  cell.className += ' alive';
+var resurrect = function(x, y, universe, cell) {
+	universe[y][x] = 1;
+  cell.className = 'cell alive';
 };
 
-var kill = function(universe, cell) {
-	var cellPosition = cell.id.split('-');
-	universe[parseInt(cellPosition[0])][parseInt(cellPosition[1])] = 0;
-  cell.className = cell.className.slice(3);   //b'coz 'row'.length = 3
+var kill = function(x, y, universe, cell) {
+  universe[y][x] = 0;
+  cell.className = cell.className.slice(0, 4);   //b'coz 'cell'.length == 4
 };
 
-var getNeighbours = function(i, j, universe) {
-	var ii, jj;
+var isAlive = function(cellValue) {
+  return cellValue === 1;
+}
+
+var getNeighbours = function(x, y, universe) {
+	var ix, iy;
 	var neighbours = [];
-	for (ii = i - 1; ii <= i + 1; ii++) {
-		for (jj = j - 1; jj <= j + 1; jj++) {
-			if (typeof(universe[ii]) !== 'undefined' &&
-					typeof(universe[ii][jj]) !== 'undefined') {
-				neighbours.push(universe[ii][jj]);
-			}
-		}
+	for (iy = y - 1; iy <= y + 1; iy++) {
+		if (typeof(universe[iy]) !== 'undefined') {
+      for (ix = x - 1; ix <= x + 1; ix++) {
+        if (typeof(universe[iy][ix]) !== 'undefined' &&
+            !(ix === x && iy === y)) {
+          neighbours.push(universe[iy][ix]);
+        }
+      }
+    }
 	}
 	return neighbours;
 }
 
-var tick = function(universe, universeContainer, speed) {
-	window.setInterval(function innerTick() {
-		var i, j;
-		var gridSize = universe.length;
-		for (i = 0; i < gridSize; i++) {
-			for (j = 0; j < gridSize; j++) {
-				var neighbours = getNeighbours(i, j, universe);
-				if (neighbours.length < 2 || neighbours.length > 3) {
-					console.log('kill');
-					kill(universe, getNxMElement(universeContainer, i, j));
-				} else {
-					console.log('resurrect');
-					resurrect(universe, getNxMElement(universeContainer, i, j));
+var tick = function(universe, universeContainer, gameParams) {
+	gameParams.timer = window.setInterval(function innerTick() {
+		var x, y;
+    var nextGenUniverse = initUniverse(gameParams.gridSize);
+		for (y = 0; y < gameParams.gridSize; y++) {
+			for (x = 0; x < gameParams.gridSize; x++) {
+				var neighbours = getNeighbours(x, y, universe).filter(isAlive);
+				if (universe[y][x] === 1) {//live cell
+          //under population and over population
+          if (neighbours.length < 2 || neighbours.length > 3) {
+            kill(x, y, nextGenUniverse, getCell(universeContainer, x, y));
+          } else {
+            resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
+          }
+				} else if (universe[y][x] === 0 &&
+            (neighbours.length === 3)) {
+					resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
 				}
 			}
 		}
-	}, speed * 100);
+    universe = nextGenUniverse;
+	}, gameParams.speed * 100);
 }
 
 var initUniverse = function(gridSize) {
@@ -67,10 +76,14 @@ var initUniverse = function(gridSize) {
 }
 
 window.onload = function(){
-  var gridSize = document.getElementById('gridSize').value;
-  var speed = document.getElementById('speed').value;
+  var speedControler = document.getElementById('speed');
+  var gameParams = {
+    gridSize : document.getElementById('gridSize').value,
+    speed : parseInt(speed.attributes.max.value) - speedControler.value + 1,
+    timer : null
+  }
 	var startBtn = document.getElementById('play');
-	var universe = initUniverse(gridSize);
+	var universe = initUniverse(gameParams.gridSize);
 
 
   (function drawUniverse(){
@@ -78,13 +91,13 @@ window.onload = function(){
     clearChildren(universeContainer);
 
     var i, j;
-    for (i = 0; i < gridSize; i++) {
+    for (i = 0; i < gameParams.gridSize; i++) {
       var row = document.createElement('div');
       row.classList.add('row');
-      for (j = 0; j < gridSize; j++) {
+      for (j = 0; j < gameParams.gridSize; j++) {
         var cell = document.createElement('span');
         cell.classList.add('cell');
-				cell.id = (i + 1) + '-' + (j + 1);
+				cell.id = i + '-' + j;
         row.appendChild(cell);
       }
       universeContainer.appendChild(row);
@@ -93,12 +106,21 @@ window.onload = function(){
 
   universeContainer.addEventListener('click', function(e) {
 		var target = e.target;
-		resurrect(universe, target);
+    if (target.className === 'cell') {
+      var co_ord = target.id.split('-');
+      //Be Carefull: we use x,y co-ord style
+      resurrect(parseInt(co_ord[1]), parseInt(co_ord[0]), universe, target);
+    }
   });
 
 	startBtn.addEventListener('click', function(e) {
-		startBtn.value = 'stop';
-		tick(universe, universeContainer, speed);
+    if (startBtn.value.toLowerCase() === 'play') {
+      startBtn.value = 'stop';
+      tick(universe, universeContainer, gameParams);
+    } else {
+      startBtn.value = 'play';
+      window.clearInterval(gameParams.timer);
+    }
 	});
 
 };
