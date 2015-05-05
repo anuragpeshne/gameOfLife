@@ -15,7 +15,7 @@ body {
   float: left;
   width: 15px;
   height: 15px;
-  border: solid 1px gray;
+  border: solid 1px #ccc;
   border-radius: 8px;
 }
 
@@ -26,4 +26,8 @@ body {
 
 .alive {
   background-color: black;
+}
+
+#rules {
+  text-align: left;
 }

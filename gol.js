@@ -76,17 +76,21 @@ var initUniverse = function(gridSize) {
 }
 
 window.onload = function(){
+  var gameParams;
+  var gridSizeBox = document.getElementById('gridSize');
+  var startBtn = document.getElementById('play');
   var speedControler = document.getElementById('speed');
-  var gameParams = {
-    gridSize : document.getElementById('gridSize').value,
-    speed : parseInt(speed.attributes.max.value) - speedControler.value + 1,
-    timer : null
+  var universe;
+
+  var updateGameParams = function() {
+    gameParams = {
+      gridSize : gridSizeBox.value,
+      speed : parseInt(speed.attributes.max.value) - speedControler.value + 1,
+      timer : null
+    }
   }
-	var startBtn = document.getElementById('play');
-	var universe = initUniverse(gameParams.gridSize);
 
-
-  (function drawUniverse(){
+  var drawUniverse = function(){
     var universeContainer = document.getElementById('universeContainer');
     clearChildren(universeContainer);
 
@@ -97,12 +101,27 @@ window.onload = function(){
       for (j = 0; j < gameParams.gridSize; j++) {
         var cell = document.createElement('span');
         cell.classList.add('cell');
-				cell.id = i + '-' + j;
+        cell.id = i + '-' + j;
         row.appendChild(cell);
       }
       universeContainer.appendChild(row);
     }
-  })();
+  }
+
+  var init = function() {
+    updateGameParams();
+    universe = initUniverse(gameParams.gridSize);
+    drawUniverse();
+  };
+  init();
+
+  var pauseGame = function() {
+    window.clearInterval(gameParams.timer);
+  }
+
+  var startGame = function() {
+    tick(universe, universeContainer, gameParams);
+  }
 
   universeContainer.addEventListener('click', function(e) {
 		var target = e.target;
@@ -116,11 +135,22 @@ window.onload = function(){
 	startBtn.addEventListener('click', function(e) {
     if (startBtn.value.toLowerCase() === 'play') {
       startBtn.value = 'stop';
-      tick(universe, universeContainer, gameParams);
+      gridSizeBox.disabled = true;
+      startGame();
     } else {
       startBtn.value = 'play';
-      window.clearInterval(gameParams.timer);
+      gridSizeBox.disabled = false;
+      pauseGame();
     }
 	});
 
+  gridSizeBox.addEventListener('change', function(e) {
+    init();
+  });
+
+  speed.addEventListener('change', function(e) {
+    pauseGame();
+    updateGameParams();
+    startGame();
+  });
 };
