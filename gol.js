@@ -9,7 +9,7 @@ var getCell = function(universeContainer, x, y) {
 };
 
 var resurrect = function(x, y, universe, cell) {
-	universe[y][x] = 1;
+  universe[y][x] = 1;
   cell.className = 'cell alive';
 };
 
@@ -23,10 +23,10 @@ var isAlive = function(cellValue) {
 }
 
 var getNeighbours = function(x, y, universe) {
-	var ix, iy;
-	var neighbours = [];
-	for (iy = y - 1; iy <= y + 1; iy++) {
-		if (typeof(universe[iy]) !== 'undefined') {
+  var ix, iy;
+  var neighbours = [];
+  for (iy = y - 1; iy <= y + 1; iy++) {
+    if (typeof(universe[iy]) !== 'undefined') {
       for (ix = x - 1; ix <= x + 1; ix++) {
         if (typeof(universe[iy][ix]) !== 'undefined' &&
             !(ix === x && iy === y)) {
@@ -34,45 +34,45 @@ var getNeighbours = function(x, y, universe) {
         }
       }
     }
-	}
-	return neighbours;
+  }
+  return neighbours;
 }
 
 var tick = function(universe, universeContainer, gameParams) {
-	gameParams.timer = window.setInterval(function innerTick() {
-		var x, y;
+  gameParams.timer = window.setInterval(function innerTick() {
+    var x, y;
     var nextGenUniverse = initUniverse(gameParams.gridSize);
-		for (y = 0; y < gameParams.gridSize; y++) {
-			for (x = 0; x < gameParams.gridSize; x++) {
-				var neighbours = getNeighbours(x, y, universe).filter(isAlive);
-				if (universe[y][x] === 1) {//live cell
+    for (y = 0; y < gameParams.gridSize; y++) {
+      for (x = 0; x < gameParams.gridSize; x++) {
+        var neighbours = getNeighbours(x, y, universe).filter(isAlive);
+        if (universe[y][x] === 1) {//live cell
           //under population and over population
           if (neighbours.length < 2 || neighbours.length > 3) {
             kill(x, y, nextGenUniverse, getCell(universeContainer, x, y));
           } else {
             resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
           }
-				} else if (universe[y][x] === 0 &&
+        } else if (universe[y][x] === 0 &&
             (neighbours.length === 3)) {
-					resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
-				}
-			}
-		}
+          resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
+        }
+      }
+    }
     universe = nextGenUniverse;
-	}, gameParams.speed * 100);
+  }, gameParams.speed * 100);
 }
 
 var initUniverse = function(gridSize) {
-	var universe = [];
-	var i, j;
-	for (i = 0; i < gridSize; i++) {
-			universe.push([]);
-			for (j = 0; j < gridSize; j++) {
-				universe[i].push(0);
-			}
-	}
+  var universe = [];
+  var i, j;
+  for (i = 0; i < gridSize; i++) {
+      universe.push([]);
+      for (j = 0; j < gridSize; j++) {
+        universe[i].push(0);
+      }
+  }
 
-	return universe;
+  return universe;
 }
 
 window.onload = function(){
@@ -83,10 +83,17 @@ window.onload = function(){
   var universe;
 
   var updateGameParams = function() {
+    if (typeof gameParams !== 'undefined' &&
+        typeof gameParams.status !== 'undefined') {
+      var oldStatus = gameParams.status;
+    } else {
+      oldStatus = 0;
+    }
     gameParams = {
       gridSize : gridSizeBox.value,
       speed : parseInt(speed.attributes.max.value) - speedControler.value + 1,
-      timer : null
+      timer : null,
+      status : oldStatus
     }
   }
 
@@ -110,6 +117,7 @@ window.onload = function(){
 
   var init = function() {
     updateGameParams();
+    gameParams.status = 0;
     universe = initUniverse(gameParams.gridSize);
     drawUniverse();
   };
@@ -117,14 +125,16 @@ window.onload = function(){
 
   var pauseGame = function() {
     window.clearInterval(gameParams.timer);
+    gameParams.status = 0;
   }
 
   var startGame = function() {
     tick(universe, universeContainer, gameParams);
+    gameParams.status = 1;
   }
 
   universeContainer.addEventListener('click', function(e) {
-		var target = e.target;
+    var target = e.target;
     if (target.className === 'cell') {
       var co_ord = target.id.split('-');
       //Be Carefull: we use x,y co-ord style
@@ -132,7 +142,7 @@ window.onload = function(){
     }
   });
 
-	startBtn.addEventListener('click', function(e) {
+  startBtn.addEventListener('click', function(e) {
     if (startBtn.value.toLowerCase() === 'play') {
       startBtn.value = 'stop';
       gridSizeBox.disabled = true;
@@ -142,15 +152,21 @@ window.onload = function(){
       gridSizeBox.disabled = false;
       pauseGame();
     }
-	});
+  });
 
   gridSizeBox.addEventListener('change', function(e) {
     init();
   });
 
   speed.addEventListener('change', function(e) {
-    pauseGame();
+    var stopedByListener = false;
+    if (gameParams.status === 1) {
+      pauseGame();
+      stopedByListener = true;
+    }
     updateGameParams();
-    startGame();
+    if (gameParams.status === 0 && stopedByListener === true) {
+      startGame();
+    }
   });
 };
