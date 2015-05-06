@@ -39,7 +39,7 @@ var getNeighbours = function(x, y, universe) {
 }
 
 var tick = function(universe, universeContainer, gameParams) {
-  gameParams.timer = window.setInterval(function innerTick() {
+  var timer = window.setInterval(function innerTick() {
     var x, y;
     var nextGenUniverse = initUniverse(gameParams.gridSize);
     for (y = 0; y < gameParams.gridSize; y++) {
@@ -60,6 +60,11 @@ var tick = function(universe, universeContainer, gameParams) {
     }
     universe = nextGenUniverse;
   }, gameParams.speed * 100);
+
+  return function() {
+    window.clearInterval(timer);
+    return universe;
+  }
 }
 
 var initUniverse = function(gridSize) {
@@ -79,6 +84,7 @@ window.onload = function(){
   var gameParams;
   var gridSizeBox = document.getElementById('gridSize');
   var startBtn = document.getElementById('play');
+  var resetBtn = document.getElementById('reset');
   var speedControler = document.getElementById('speed');
   var universe;
 
@@ -124,12 +130,12 @@ window.onload = function(){
   init();
 
   var pauseGame = function() {
-    window.clearInterval(gameParams.timer);
+    universe = gameParams.pauseTick();
     gameParams.status = 0;
   }
 
   var startGame = function() {
-    tick(universe, universeContainer, gameParams);
+    gameParams.pauseTick = tick(universe, universeContainer, gameParams);
     gameParams.status = 1;
   }
 
@@ -146,10 +152,12 @@ window.onload = function(){
     if (startBtn.value.toLowerCase() === 'play') {
       startBtn.value = 'stop';
       gridSizeBox.disabled = true;
+      resetBtn.disabled = true;
       startGame();
     } else {
       startBtn.value = 'play';
       gridSizeBox.disabled = false;
+      resetBtn.disabled = false;
       pauseGame();
     }
   });
@@ -168,5 +176,9 @@ window.onload = function(){
     if (gameParams.status === 0 && stopedByListener === true) {
       startGame();
     }
+  });
+
+  resetBtn.addEventListener('click', function() {
+    init();
   });
 };
