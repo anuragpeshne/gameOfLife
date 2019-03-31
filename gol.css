@@ -8,14 +8,15 @@ body {
 }
 
 #universeContainer {
-  min-width: 800px;
+  /*min-width: 800px;*/
 }
 
 .cell {
   float: left;
   width: 8px;
   height: 8px;
-  border: solid 1px #ccc;
+  /*border: solid 1px #ccc;*/
+  /*background-color: #eee;*/
   border-radius: 8px;
 }
 
@@ -25,7 +26,7 @@ body {
 }
 
 .alive {
-  background-color: black;
+  background-color: #444;
 }
 
 #rules {

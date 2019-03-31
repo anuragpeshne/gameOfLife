@@ -12,9 +12,9 @@
      var url = new URL(url_string);
      var c = url.searchParams.get("c");
 
-     var width = url.searchParams.get("gridWidth") || "500";
-     var height = url.searchParams.get("gridHeight") || "300";
-     var speed = parseInt(url.searchParams.get("speed")) || 400;
+     var width = url.searchParams.get("width") || "500";
+     var height = url.searchParams.get("height") || "300";
+     var speed = parseInt(url.searchParams.get("speed")) || 1000;
      var preset = url.searchParams.get("preset") || "random";
 
      var universeContainer = document.getElementById('universeContainer');

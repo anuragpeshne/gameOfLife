@@ -14,21 +14,22 @@ function Universe(length, breath) {
     return grid;
   };
 
-  this.tick = function() {
-    function getNeighbours(x, y) {
-      var neighbours = [];
-      for (var row = x - 1; row <= x + 1; row++) {
-        for (var col = y - 1; col <= y + 1; col++) {
-          if (row >= 0 && row < grid.length &&
-              col >= 0 && col < grid[0].length &&
-              !(row === x && col === y)) {
-            neighbours.push([row, col]);
-          }
+  function getNeighbours(x, y) {
+    var neighbours = [];
+    for (var row = x - 1; row <= x + 1; row++) {
+      for (var col = y - 1; col <= y + 1; col++) {
+        if (row >= 0 && row < grid.length &&
+            col >= 0 && col < grid[0].length &&
+            !(row === x && col === y)) {
+          neighbours.push([row, col]);
         }
       }
-      return neighbours;
     }
+    return neighbours;
+  }
+  this.getNeighbours = getNeighbours;
 
+  this.tick = function() {
     function kill(row, col) {
       grid[row][col] &= 1; // 11 & 01 = 1
     }
@@ -88,7 +89,7 @@ function presetUniverse(universe) {
   for (var row = 0; row < universe.breath; row++) {
     for (var col = 0; col < universe.length; col++) {
       var rnd = Math.random();
-      if (rnd > 0.5) {
+      if (rnd > 0.8) {
         universe.resurrectCell(row, col);
       }
     }
@@ -100,8 +101,8 @@ function DomUniverse(universeContainer) {
   var containerLength = this.universeContainer.offsetWidth;
   var containerBreath = this.universeContainer.offsetHeight;
 
-  this.length = Math.floor((containerLength / CELL_SIZE) * 8 / 10);
-  this.breath = Math.floor((containerBreath / CELL_SIZE) * 8 / 10);
+  this.length = Math.floor((containerLength / CELL_SIZE));// * 8 / 10);
+  this.breath = Math.floor((containerBreath / CELL_SIZE));// * 8 / 10);
 
   this.draw = function(){
     this.clear();
