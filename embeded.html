@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<link rel="stylesheet" type="text/css" href="gol.css">
+<script src="gol.js"></script>
+<script type="text/javascript">
+
+ window.onload = function(){
+     var url_string = window.location.href
+     var url = new URL(url_string);
+     var c = url.searchParams.get("c");
+
+     var width = url.searchParams.get("gridWidth") || "500";
+     var height = url.searchParams.get("gridHeight") || "300";
+     var speed = parseInt(url.searchParams.get("speed")) || 400;
+     var preset = url.searchParams.get("preset") || "random";
+
+     var universeContainer = document.getElementById('universeContainer');
+     universeContainer.style.width = width + "px";
+     universeContainer.style.height = height + "px";
+
+     var game = new GameOfLife(universeContainer, preset)
+     game.play(speed);
+ }
+</script>
+</head>
+<body>
+    <div id="universeContainer"></div>
+</body>
+</html>
