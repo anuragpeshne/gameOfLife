@@ -30,7 +30,7 @@
      };
 
      var startGame = function() {
-         currentStatus = status["paused"];
+         currentStatus = status["play"];
          game.play((parseInt(speed.attributes.max.value) - speedControler.value + 1) * 100);
      };
 
@@ -70,7 +70,6 @@
              pauseGame();
              stopedByListener = true;
          }
-         updateGameParams();
          if (currentStatus === status["paused"] && stopedByListener === true) {
              startGame();
          }
