@@ -13,8 +13,8 @@ body {
 
 .cell {
   float: left;
-  width: 15px;
-  height: 15px;
+  width: 8px;
+  height: 8px;
   border: solid 1px #ccc;
   border-radius: 8px;
 }

@@ -1,117 +1,115 @@
-var clearChildren = function (element) {
-  while (element.firstChild) {
-        element.removeChild(element.firstChild);
-  }
-};
+/*jshint esversion: 6 */
 
-var getCell = function(universeContainer, x, y) {
-  return universeContainer.childNodes[y].childNodes[x];
-};
+const CELL_SIZE = 8; // in pixels
 
-var resurrect = function(x, y, universe, cell) {
-  universe[y][x] = 1;
-  cell.className = 'cell alive';
-};
-
-var kill = function(x, y, universe, cell) {
-  universe[y][x] = 0;
-  cell.className = cell.className.slice(0, 4);   //b'coz 'cell'.length == 4
-};
-
-var isAlive = function(cellValue) {
-  return cellValue === 1;
-}
-
-var getNeighbours = function(x, y, universe) {
-  var ix, iy;
-  var neighbours = [];
-  for (iy = y - 1; iy <= y + 1; iy++) {
-    if (typeof(universe[iy]) !== 'undefined') {
-      for (ix = x - 1; ix <= x + 1; ix++) {
-        if (typeof(universe[iy][ix]) !== 'undefined' &&
-            !(ix === x && iy === y)) {
-          neighbours.push(universe[iy][ix]);
-        }
+function Universe(length, breath) {
+  var initGrid = function(length, breath) {
+    var grid = [];
+    for (var row = 0; row < breath; row++) {
+      grid.push([]);
+      for (var col = 0; col < length; col++) {
+        grid[row].push(0);
       }
     }
-  }
-  return neighbours;
-}
+    return grid;
+  };
 
-var tick = function(universe, universeContainer, gameParams) {
-  var timer = window.setInterval(function innerTick() {
-    var x, y;
-    var nextGenUniverse = initUniverse(gameParams.gridSize);
-    for (y = 0; y < gameParams.gridSize; y++) {
-      for (x = 0; x < gameParams.gridSize; x++) {
-        var neighbours = getNeighbours(x, y, universe).filter(isAlive);
-        if (universe[y][x] === 1) {//live cell
-          //under population and over population
-          if (neighbours.length < 2 || neighbours.length > 3) {
-            kill(x, y, nextGenUniverse, getCell(universeContainer, x, y));
-          } else {
-            resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
+  this.tick = function() {
+    function getNeighbours(x, y) {
+      var neighbours = [];
+      for (var row = x - 1; row <= x + 1; row++) {
+        for (var col = y - 1; col <= y + 1; col++) {
+          if (row >= 0 && row < grid.length &&
+              col >= 0 && col < grid[0].length &&
+              !(row === x && col === y)) {
+            neighbours.push([row, col]);
           }
-        } else if (universe[y][x] === 0 &&
-            (neighbours.length === 3)) {
-          resurrect(x, y, nextGenUniverse, getCell(universeContainer, x, y));
+        }
+      }
+      return neighbours;
+    }
+
+    function kill(row, col) {
+      grid[row][col] &= 1; // 11 & 01 = 1
+    }
+
+    function resurrect(row, col) {
+      grid[row][col] |= (1 << 1); // 01 | (1 << 1) = 01 | 10 = 11
+    }
+
+    function generateNextState() {
+      for (var row = 0; row < grid.length; row++) {
+        for (var col = 0; col < grid[0].length; col++) {
+          var aliveNeighbours = getNeighbours(row, col).filter(function(neighbor) {
+            return isCellAlive(neighbor[0], neighbor[1]);
+          });
+          if (isCellAlive(grid[row][col])) {
+            //under population and over population
+            if (aliveNeighbours.length < 2 || aliveNeighbours.length > 3) {
+              kill(row, col);
+            } else {
+              resurrect(row, col);
+            }
+          } else {
+            if (aliveNeighbours.length === 3) {
+              resurrect(row, col);
+            }
+          }
         }
       }
     }
-    universe = nextGenUniverse;
-  }, gameParams.speed * 100);
 
-  return function() {
-    window.clearInterval(timer);
-    return universe;
-  }
-}
-
-var initUniverse = function(gridSize) {
-  var universe = [];
-  var i, j;
-  for (i = 0; i < gridSize; i++) {
-      universe.push([]);
-      for (j = 0; j < gridSize; j++) {
-        universe[i].push(0);
+    function applyNextState() {
+      for (var row = 0; row < grid.length; row++) {
+        for (var col = 0; col < grid[0].length; col++) {
+          grid[row][col] = grid[row][col] >> 1;
+        }
       }
-  }
+    }
+    generateNextState();
+    applyNextState();
+  };
 
-  return universe;
+  this.resurrectCell = function (row, col) {
+    grid[row][col] = 1;
+  };
+
+  function isCellAlive(row, col) {
+    return (grid[row][col] & 1) > 0;
+  };
+  this.isCellAlive = isCellAlive;
+
+  var grid = initGrid(length, breath);
+  this.length = length;
+  this.breath = breath;
 }
 
-window.onload = function(){
-  var gameParams;
-  var gridSizeBox = document.getElementById('gridSize');
-  var startBtn = document.getElementById('play');
-  var resetBtn = document.getElementById('reset');
-  var speedControler = document.getElementById('speed');
-  var universe;
-
-  var updateGameParams = function() {
-    if (typeof gameParams !== 'undefined' &&
-        typeof gameParams.status !== 'undefined') {
-      var oldStatus = gameParams.status;
-    } else {
-      oldStatus = 0;
-    }
-    gameParams = {
-      gridSize : gridSizeBox.value,
-      speed : parseInt(speed.attributes.max.value) - speedControler.value + 1,
-      timer : null,
-      status : oldStatus
+function presetUniverse(universe) {
+  for (var row = 0; row < universe.breath; row++) {
+    for (var col = 0; col < universe.length; col++) {
+      var rnd = Math.random();
+      if (rnd > 0.5) {
+        universe.resurrectCell(row, col);
+      }
     }
   }
+}
 
-  var drawUniverse = function(){
-    var universeContainer = document.getElementById('universeContainer');
-    clearChildren(universeContainer);
+function DomUniverse(universeContainer) {
+  this.universeContainer = universeContainer;
+  var containerLength = this.universeContainer.offsetWidth;
+  var containerBreath = this.universeContainer.offsetHeight;
 
-    var i, j;
-    for (i = 0; i < gameParams.gridSize; i++) {
+  this.length = Math.floor((containerLength / CELL_SIZE) * 8 / 10);
+  this.breath = Math.floor((containerBreath / CELL_SIZE) * 8 / 10);
+
+  this.draw = function(){
+    this.clear();
+
+    for (var i = 0; i < this.breath; i++) {
       var row = document.createElement('div');
       row.classList.add('row');
-      for (j = 0; j < gameParams.gridSize; j++) {
+      for (var j = 0; j < this.length; j++) {
         var cell = document.createElement('span');
         cell.classList.add('cell');
         cell.id = i + '-' + j;
@@ -119,66 +117,52 @@ window.onload = function(){
       }
       universeContainer.appendChild(row);
     }
-  }
-
-  var init = function() {
-    updateGameParams();
-    gameParams.status = 0;
-    universe = initUniverse(gameParams.gridSize);
-    drawUniverse();
   };
-  init();
 
-  var pauseGame = function() {
-    universe = gameParams.pauseTick();
-    gameParams.status = 0;
-  }
-
-  var startGame = function() {
-    gameParams.pauseTick = tick(universe, universeContainer, gameParams);
-    gameParams.status = 1;
-  }
-
-  universeContainer.addEventListener('click', function(e) {
-    var target = e.target;
-    if (target.className === 'cell') {
-      var co_ord = target.id.split('-');
-      //Be Carefull: we use x,y co-ord style
-      resurrect(parseInt(co_ord[1]), parseInt(co_ord[0]), universe, target);
+  this.update = function(universe) {
+    for (var row = 0; row < universe.breath; row++) {
+      for (var col = 0; col < universe.length; col++) {
+        if (universe.isCellAlive(row, col)) {
+          this.universeContainer.childNodes[row].childNodes[col].className = "cell alive";
+        } else {
+          this.universeContainer.childNodes[row].childNodes[col].className = "cell";
+        }
+      }
     }
-  });
+  };
 
-  startBtn.addEventListener('click', function(e) {
-    if (startBtn.value.toLowerCase() === 'play') {
-      startBtn.value = 'stop';
-      gridSizeBox.disabled = true;
-      resetBtn.disabled = true;
-      startGame();
-    } else {
-      startBtn.value = 'play';
-      gridSizeBox.disabled = false;
-      resetBtn.disabled = false;
-      pauseGame();
+  // https://stackoverflow.com/a/3955238/1291435
+  this.clear = function () {
+    var element = this.universeContainer;
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
     }
-  });
+  };
+}
 
-  gridSizeBox.addEventListener('change', function(e) {
-    init();
-  });
+function GameOfLife(universeContainer, preset) {
+  var domUniverse = new DomUniverse(universeContainer);
+  var universe = new Universe(domUniverse.length, domUniverse.breath);
+  var interval = null;
 
-  speed.addEventListener('change', function(e) {
-    var stopedByListener = false;
-    if (gameParams.status === 1) {
-      pauseGame();
-      stopedByListener = true;
-    }
-    updateGameParams();
-    if (gameParams.status === 0 && stopedByListener === true) {
-      startGame();
-    }
-  });
+  domUniverse.draw();
+  presetUniverse(universe);
+  domUniverse.update(universe);
 
-  resetBtn.addEventListener('click', function() {
-    init();
-  });
-};
+  this.resurrectCell = function(row, col) {
+    universe.resurrectCell(row, col);
+    domUniverse.update(universe);
+  };
+
+  this.play = function(speed) {
+    interval = window.setInterval(function() {
+      console.log("play");
+      universe.tick();
+      domUniverse.update(universe);
+    }, speed);
+  };
+
+  this.pause = function() {
+    window.clearInterval(interval);
+  };
+}
