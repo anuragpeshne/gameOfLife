@@ -43,7 +43,7 @@ function Universe(length, breath) {
           var aliveNeighbours = getNeighbours(row, col).filter(function(neighbor) {
             return isCellAlive(neighbor[0], neighbor[1]);
           });
-          if (isCellAlive(grid[row][col])) {
+          if (isCellAlive(row, col)) {
             //under population and over population
             if (aliveNeighbours.length < 2 || aliveNeighbours.length > 3) {
               kill(row, col);
